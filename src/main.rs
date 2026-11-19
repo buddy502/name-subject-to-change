@@ -1,18 +1,14 @@
 mod window;
 use window::{Window};
 
-use windows::{Win32::UI::WindowsAndMessaging::*};
+mod div;
 
 fn main() {
-    let mut window = Window::init_window();
-    window.width = 800;
-    window.height = 600;
+    let mut window = Window::init_window_s();
 
+    window.create_window();
 
+    window.temp_run();
 
-    // Test functions
-    println!("{}", window.width);
-    println!("{}", window.get_height());
-    let pos = window.get_position();
-    println!("x: {}, y: {}", pos[0], pos[1]);
+    window.destroy_window();
 }
