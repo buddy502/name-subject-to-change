@@ -41,8 +41,24 @@
 //*/
 
 use std::panic::Location;
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
-enum Size {
+use crate::Div;
+use crate::HtmlBase;
+
+pub enum HtmlTag {
+    Html(HtmlBase),
+    Div(Div),
+}
+
+pub struct Tree {
+    pub value: HtmlTag,
+    pub parent: RefCell<Weak<Tree>>,
+    pub children: RefCell<Vec<Rc<Tree>>>,
+}
+
+pub enum Size {
     // default
     Auto,
     None,
@@ -63,7 +79,7 @@ enum Size {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum BorderStyle {
+pub enum BorderStyle {
     None,
     Solid,
     Dashed,
@@ -72,7 +88,7 @@ enum BorderStyle {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Repeat {
+pub enum Repeat {
     Repeat,
     NoRepeat,
     RepeatX,
@@ -80,7 +96,9 @@ enum Repeat {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum TextAlign {
+pub enum TextAlign {
+    Start,
+    End,
     Left,
     Right,
     Center,
@@ -88,7 +106,7 @@ enum TextAlign {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum TextDecoration {
+pub enum TextDecoration {
     None,
     Underline,
     Overline,
@@ -96,7 +114,22 @@ enum TextDecoration {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Position {
+pub enum Float {
+    None,
+    Left,
+    Right,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Overflow {
+    Visible,
+    Hidden,
+    Scroll,
+    Auto,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Position {
     Static,
     Relative,
     Absolute,
@@ -105,7 +138,7 @@ enum Position {
 }
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
-enum Display {
+pub enum Display {
     #[default]
     None,
     Block,
@@ -116,7 +149,7 @@ enum Display {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum FlexDirection {
+pub enum FlexDirection {
     Row,
     RowReverse,
     Column,
@@ -124,7 +157,7 @@ enum FlexDirection {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Justify {
+pub enum Justify {
     Start,
     End,
     Center,
@@ -134,7 +167,7 @@ enum Justify {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Align {
+pub enum Align {
     Start,
     End,
     Center,
@@ -142,17 +175,38 @@ enum Align {
     Baseline,
 }
 
-struct Color {
-    r: u16,
-    g: u16,
-    b: u16,
+pub struct Color {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
-struct Shadow {
-    size: Vec<Size>,
-    color: Color,
-    blur: u16,
-    spread: i16,
+impl Color {
+    pub const BLACK: Color = Color { r: 0, g: 0, b: 0, a: 255 };
+    pub const WHITE: Color = Color { r: 255, g: 255, b: 255, a: 255 };
+    pub const TRANSPARENT: Color = Color { r: 0, g: 0, b: 0, a: 0 };
+
+    pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
+        Color { r, g, b, a: 255 }
+    }
+
+    pub const fn rgba(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Color { r, g, b, a }
+    }
+}
+
+impl Default for Color {
+    fn default() -> Self {
+        Color::BLACK
+    }
+}
+
+pub struct Shadow {
+    pub size: Vec<Size>,
+    pub color: Color,
+    pub blur: u16,
+    pub spread: i16,
 }
 
 impl Shadow {
@@ -199,93 +253,97 @@ impl Default for Size {
 }
 
 #[derive(Default)]
-struct Sizing {
-    display: Display,
-    width: Size,
-    height: Size,
-    min_width: Size,
-    max_width: Size,
-    min_height: Size,
-    max_height: Size,
-    box_sizing: Size,
+pub struct Sizing {
+    pub display: Display,
+    pub width: Size,
+    pub height: Size,
+    pub min_width: Size,
+    pub max_width: Size,
+    pub min_height: Size,
+    pub max_height: Size,
+    pub box_sizing: Size,
 }
 
 #[derive(Default)]
-struct Spacing {
-    margin: Size,
-    margin_left: Size,
-    margin_right: Size,
-    margin_top: Size,
-    margin_bottom: Size,
-    padding: Size,
-    padding_left: Size,
-    padding_right: Size,
-    padding_top: Size,
-    padding_bottom: Size
+pub struct Spacing {
+    pub margin: Size,
+    pub margin_left: Size,
+    pub margin_right: Size,
+    pub margin_top: Size,
+    pub margin_bottom: Size,
+    pub padding: Size,
+    pub padding_left: Size,
+    pub padding_right: Size,
+    pub padding_top: Size,
+    pub padding_bottom: Size
 }
 
 #[derive(Default)]
-struct Border {
-    border_width: Size,
-    border_style: Option<BorderStyle>,
-    border_color: Option<Color>,
-    border_top: Size,
-    border_right: Size,
-    border_bottom: Size,
-    border_left: Size,
+pub struct Border {
+    pub border_width: Size,
+    pub border_style: Option<BorderStyle>,
+    pub border_color: Color,
+    pub border_top: Size,
+    pub border_right: Size,
+    pub border_bottom: Size,
+    pub border_left: Size,
     // box model
-    box_shadow: Option<Shadow>,
-    outline: Size,
-    outline_offset: Size,
+    pub box_shadow: Option<Shadow>,
+    pub outline: Size,
+    pub outline_offset: Size,
 }
 
 #[derive(Default)]
-struct Background {
-    background_color: Option<Color>,
-    background_image: Option<String>,        // path or URL
-    background_repeat: Option<Repeat>,
-    background_position: Option<(Size, Size)>,
-    background_size: Option<(Size, Size)>,
+pub struct Background {
+    pub background_color: Color,
+    pub background_image: String,        // path or URL
+    pub background_repeat: Option<Repeat>,
+    pub background_position: (Size, Size),
+    pub background_size: (Size, Size),
 }
 
 #[derive(Default)]
-struct Typography {
-    color: Option<Color>,
-    font_size: Size,
-    font_family: Option<String>,
-    font_weight: Option<u16>,                // 100 to 900
-    line_height: Size,
-    text_align: Option<TextAlign>,
-    text_decoration: Option<TextDecoration>,
+pub struct Typography {
+    pub color: Color,
+    pub font_size: Size,
+    pub font_family: String,
+    pub font_weight: u16,                // 100 to 900
+    pub line_height: Size,
+    pub text_align: Option<TextAlign>,
+    pub text_decoration: Option<TextDecoration>,
 }
 
 #[derive(Default)]
-struct Positioning {
-    position: Option<Position>,
-    top: Size,
-    right: Size,
-    bottom: Size,
-    left: Size,
-    z_index: i32,
-    transform: Option<String>,
-    translate: Option<(Size, Size)>,
-    rotate: f32,                             // degrees
+pub struct Positioning {
+    pub position: Option<Position>,
+    pub float: Option<Float>,
+    pub top: Size,
+    pub right: Size,
+    pub bottom: Size,
+    pub left: Size,
+    pub z_index: i32,
+    pub transform: String,
+    pub translate: (Size, Size),
+    pub rotate: f32,                             // degrees
 }
 
 #[derive(Default)]
-struct Layout {
-    display: Option<Display>,                // Flex | Grid | ...
-    flex_direction: Option<FlexDirection>,
-    justify_content: Option<Justify>,
-    align_items: Option<Align>,
-    grid_template_columns: Vec<Size>,
-    grid_template_rows: Vec<Size>,
+pub struct Layout {
+    pub display: Option<Display>,                // Flex | Grid
+    pub overflow: Option<Overflow>,
+    pub visible: bool,
+    pub opacity: f32,
+    pub flex_direction: Option<FlexDirection>,
+    pub justify_content: Option<Justify>,
+    pub align_items: Option<Align>,
+    pub grid_template_columns: Vec<Size>,
+    pub grid_template_rows: Vec<Size>,
 }
 
 #[derive(Default)]
-struct Pseudo {
-    before: Option<String>,                  // ::before content
-    after: Option<String>,                   // ::after content
+pub struct Pseudo {
+    pub before: Option<String>,                  // ::before content
+    pub after: Option<String>,                   // ::after content
 }
 
 pub struct Styles {

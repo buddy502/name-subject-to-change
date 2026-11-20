@@ -7,9 +7,13 @@
 use windows::{
     core::{
         w,
+        PCWSTR,
         HSTRING
     },
     Win32::{
+        Graphics::Gdi:: {
+            HBRUSH, COLOR_WINDOW,
+        },
         Foundation::{
             HWND,
             HINSTANCE,
@@ -21,7 +25,7 @@ use windows::{
             DestroyWindow,
             RegisterClassW,
             GetMessageW, TranslateMessage, DispatchMessageW,
-            WNDCLASSW, MSG,
+            WNDCLASSW, MSG, CS_HREDRAW, CS_VREDRAW,
             IsWindow,
             WINDOW_STYLE, WINDOW_EX_STYLE,
             DefWindowProcW, PostQuitMessage, WM_DESTROY,
@@ -35,7 +39,7 @@ pub struct Window {
     pub pwidth: i32,
     pub pheight: i32,
     pub position: [i32; 2],
-    pub wtitle: String,
+    pub wtitle: HSTRING,
 
     window_flags: Option<WINDOW_STYLE>,
     hwnd: Option<HWND>,
@@ -56,7 +60,7 @@ unsafe extern "system" fn wnd_proc(
     }
 }
 
-type Windows = Option<Box<Window>>;
+//type Windows = Option<Box<Window>>;
 
 impl Window {
     // Initialize a window struct with default values
@@ -64,11 +68,18 @@ impl Window {
         Window {
             pwidth: 800,
             pheight: 600,
-            wtitle: String::from("Window"),
+            wtitle: HSTRING::from(""),
             position: [CW_USEDEFAULT, CW_USEDEFAULT],
             window_flags: Some(WS_OVERLAPPEDWINDOW | WS_VISIBLE),
             ..Default::default()
         }
+    }
+
+    pub fn title(&mut self, title: &str) {
+        self.wtitle = HSTRING::from(title);
+    }
+    pub fn get_title(&self) -> &HSTRING {
+        &self.wtitle
     }
 
     // probably use Windows type for different function
@@ -81,6 +92,8 @@ impl Window {
 
         // create register then create window
         let wc = WNDCLASSW {
+            style: CS_HREDRAW | CS_VREDRAW,
+            hbrBackground: HBRUSH((COLOR_WINDOW.0 + 1) as isize as *mut _),
             lpfnWndProc: Some(wnd_proc),
             hInstance: hinstance.into(),
             lpszClassName: w!("Window"),
@@ -95,7 +108,7 @@ impl Window {
                 //hinstance: Option<super::super::Foundation::HINSTANCE>,
                 WINDOW_EX_STYLE::default(),
                 w!("Window"),
-                &HSTRING::from(self.wtitle.as_str()),
+                self.get_title(),
                 self.window_flags.unwrap_or(WS_OVERLAPPEDWINDOW | WS_VISIBLE),
                 self.position[0], self.position[1],
                 self.pwidth, self.pheight,
@@ -113,7 +126,6 @@ impl Window {
     }
 
     pub fn temp_run(&self) {
-        println!("running loop");
         let mut msg = MSG::default();
         unsafe {
             while GetMessageW(&mut msg, None, 0, 0).as_bool() {
