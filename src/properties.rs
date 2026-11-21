@@ -1,45 +1,3 @@
-///*
-//    // Every CSS html property I'm implementing
-//    Layout & sizing:
-//        display, width, height, min-width, max-width, min-height, max-height, box-sizing
-//        
-//    Spacing:
-//        margin, margin-left, margin-right, margin-top, margin-bottom, padding,
-//        padding-left, padding-right, padding-top, padding-bottom
-//        
-//    Borders:
-//        border, border-width, border-style, border-color, border-top, border-right, etc.
-//        
-//    Backgrounds:
-//        background-color, background-image, background-repeat, background-position, background-size
-//        
-//    Text & typography:
-//        color, font-size, font-family, font-weight, line-height, text-align, text-decoration
-//        
-//    Positioning:
-//        position, top, right, bottom, left, z-index, transform, translate, rotate
-//        
-//    Box model:
-//        box-shadow, outline, outline-offset
-//        
-//    Flexbox/Grid:
-//        display (flex | grid), flex-direction, justify-content, align-items,
-//        grid-template-columns, grid-template-rows
-//        
-//    Pseudo-elements:
-//        ::before, ::after (for content inside <div>)
-//*/
-//
-///*
-//    Every CSS property is going to be in the same file as the html declarations
-//        It looks like a lot of .'s but it's needed for readability trust, if not then a
-//    struct holds like 100 different CSS properties, removed uneeded .style struct
-//    e.g. let div = create_div(); div.spacing.margin = 
-//    Used for inline CSS, no external file css needed
-//
-//    Div creates a default implementation that the user can change
-//*/
-
 use std::panic::Location;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -58,6 +16,7 @@ pub struct Tree {
     pub children: RefCell<Vec<Rc<Tree>>>,
 }
 
+#[derive(Debug)]
 pub enum Size {
     // default
     Auto,
@@ -175,6 +134,7 @@ pub enum Align {
     Baseline,
 }
 
+#[derive(Debug)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
@@ -202,6 +162,7 @@ impl Default for Color {
     }
 }
 
+#[derive(Debug)]
 pub struct Shadow {
     pub size: Vec<Size>,
     pub color: Color,
@@ -252,7 +213,7 @@ impl Default for Size {
     fn default() -> Self { Size::Px(0.0) }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Sizing {
     pub display: Display,
     pub width: Size,
@@ -264,7 +225,7 @@ pub struct Sizing {
     pub box_sizing: Size,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Spacing {
     pub margin: Size,
     pub margin_left: Size,
@@ -278,7 +239,7 @@ pub struct Spacing {
     pub padding_bottom: Size
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Border {
     pub border_width: Size,
     pub border_style: Option<BorderStyle>,
@@ -293,7 +254,7 @@ pub struct Border {
     pub outline_offset: Size,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Background {
     pub background_color: Color,
     pub background_image: String,        // path or URL
@@ -302,7 +263,7 @@ pub struct Background {
     pub background_size: (Size, Size),
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Typography {
     pub color: Color,
     pub font_size: Size,
@@ -313,7 +274,7 @@ pub struct Typography {
     pub text_decoration: Option<TextDecoration>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Positioning {
     pub position: Option<Position>,
     pub float: Option<Float>,
@@ -327,7 +288,7 @@ pub struct Positioning {
     pub rotate: f32,                             // degrees
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Layout {
     pub display: Option<Display>,                // Flex | Grid
     pub overflow: Option<Overflow>,
@@ -340,12 +301,13 @@ pub struct Layout {
     pub grid_template_rows: Vec<Size>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Pseudo {
     pub before: Option<String>,                  // ::before content
     pub after: Option<String>,                   // ::after content
 }
 
+#[derive(Debug)]
 pub struct Styles {
     pub spacing: Option<Spacing>,
     pub sizing: Option<Sizing>,

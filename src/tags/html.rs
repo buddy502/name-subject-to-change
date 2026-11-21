@@ -20,6 +20,7 @@
 
 use crate::properties::*;
 
+#[derive(Debug)]
 pub struct HtmlBase {
     pub styles: Styles,
 }
@@ -30,7 +31,9 @@ impl HtmlBase {
             styles: Styles {
                 spacing: Some(Spacing { margin: px(0.0), padding: px(0.0), ..Default::default() }),
                 sizing: Some(Sizing { width: Size::Auto, height: Size::Auto, ..Default::default() }),
-                border: Some(Border { border_width: px(3.0), border_style: Some(BorderStyle::None), ..Default::default() }),
+                border: Some(Border { border_width: px(3.0), border_style: Some(BorderStyle::None),
+                        ..Default::default()
+                }),
                 background: Some(Background {
                     background_color: Color { r: 0, g: 0, b: 0, a: 0 }, // transparent
                     ..Default::default()

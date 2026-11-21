@@ -7,12 +7,11 @@
 use windows::{
     core::{
         w,
-        PCWSTR,
         HSTRING
     },
     Win32::{
         Graphics::Gdi:: {
-            HBRUSH, COLOR_WINDOW,
+            HBRUSH, COLOR_WINDOW, InvalidateRect
         },
         Foundation::{
             HWND,
@@ -29,21 +28,14 @@ use windows::{
             IsWindow,
             WINDOW_STYLE, WINDOW_EX_STYLE,
             DefWindowProcW, PostQuitMessage, WM_DESTROY,
-            WS_OVERLAPPEDWINDOW, WS_VISIBLE, CW_USEDEFAULT
+            WS_OVERLAPPEDWINDOW, WS_VISIBLE, CW_USEDEFAULT,
+            GetWindowLongPtrW, GWLP_USERDATA, WM_PAINT,
         }
     }
 };
 
-#[derive(Default)]
-pub struct Window {
-    pub pwidth: i32,
-    pub pheight: i32,
-    pub position: [i32; 2],
-    pub wtitle: HSTRING,
-
-    window_flags: Option<WINDOW_STYLE>,
-    hwnd: Option<HWND>,
-}
+use crate::HtmlBase;
+use crate::styles::background::on_paint;
 
 unsafe extern "system" fn wnd_proc(
     hwnd: HWND,
@@ -52,12 +44,28 @@ unsafe extern "system" fn wnd_proc(
     lparam: LPARAM,
 ) -> LRESULT {
     match msg {
+        WM_PAINT => {
+            let ptr = unsafe { GetWindowLongPtrW(hwnd, GWLP_USERDATA) } as *const HtmlBase;
+            unsafe { on_paint(hwnd, ptr.as_ref()) };
+            LRESULT(0)
+        }
         WM_DESTROY => {
             unsafe { PostQuitMessage(0) };
             LRESULT(0)
         }
         _ => unsafe { DefWindowProcW(hwnd, msg, wparam, lparam) },
     }
+}
+
+#[derive(Default)]
+pub struct Window {
+    pub pwidth: i32,
+    pub pheight: i32,
+    pub position: [i32; 2],
+    pub wtitle: HSTRING,
+
+    pub window_flags: Option<WINDOW_STYLE>,
+    pub hwnd: Option<HWND>,
 }
 
 //type Windows = Option<Box<Window>>;
@@ -75,6 +83,9 @@ impl Window {
         }
     }
 
+    pub fn redraw(&self) {
+        let _ = unsafe { InvalidateRect(self.hwnd, None, true) };
+    }
     pub fn title(&mut self, title: &str) {
         self.wtitle = HSTRING::from(title);
     }
@@ -93,7 +104,6 @@ impl Window {
         // create register then create window
         let wc = WNDCLASSW {
             style: CS_HREDRAW | CS_VREDRAW,
-            hbrBackground: HBRUSH((COLOR_WINDOW.0 + 1) as isize as *mut _),
             lpfnWndProc: Some(wnd_proc),
             hInstance: hinstance.into(),
             lpszClassName: w!("Window"),
@@ -105,7 +115,6 @@ impl Window {
 
         let hwnd = unsafe {
             CreateWindowExW(
-                //hinstance: Option<super::super::Foundation::HINSTANCE>,
                 WINDOW_EX_STYLE::default(),
                 w!("Window"),
                 self.get_title(),
@@ -129,19 +138,8 @@ impl Window {
         let mut msg = MSG::default();
         unsafe {
             while GetMessageW(&mut msg, None, 0, 0).as_bool() {
-                let _ = TranslateMessage(&msg);
-                DispatchMessageW(&msg);
-            }
-        }
-    }
-
-    pub fn destroy_window(&mut self) {
-        println!("Destroying window");
-        if let Some(hwnd) = self.hwnd.take() {
-            unsafe {
-                if IsWindow(Some(hwnd)).as_bool() {
-                    DestroyWindow(hwnd).expect("Failed to destroy window");
-                }
+                let _ = TranslateMessage(&msg); // keyboard input to text
+                DispatchMessageW(&msg); // required, calls wnd_proc
             }
         }
     }
